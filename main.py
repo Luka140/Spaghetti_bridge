@@ -50,10 +50,11 @@ def StiffMat(Area, I, E, leng):  # define stiffness matrix
 def assemble_K(E, areas, lengths, moi, connections):
     n_nodes = lengths.size + 1
     K_global = np.zeros((n_nodes * 3, n_nodes * 3))
-    for el_idx, con1, con2 in enumerate(connections):
-        n1idx, n2idx = con1 - 1, con2 - 1
+    for el_idx in range(len(connections)):
+        n1idx, n2idx = connections[el_idx, 0] - 1, connections[el_idx, 1] - 1
         # n1, n2 = NodePos[n1idx,:], NodePos[n2idx,:]
         K_local = StiffMat(areas[el_idx], moi[el_idx], E, lengths[el_idx])
+        # TODO here transform
 
         indices = (3 * n1idx, 3 * n1idx + 1, 3 * n1idx + 2,
                    3 * n2idx, 3 * n2idx + 1, 3 * n2idx + 2)
@@ -101,8 +102,8 @@ def simulate_frame(E, n_elem, a, b, qx, w_frame, h_frame, l_frame, BC):
     moi = np.array([w_frame * h_frame ** 3 / 12 for i in range(n_elem)])
     areas = np.array([h_frame * w_frame for i in range(n_elem)])
 
-    force = gen_force_vector()
     K = assemble_K(E, areas, lengths, moi, con)
+    force = gen_force_vector()
     K_red, F_red = reduce_matrices(K, force, BC)
     u_global = np.linalg.solve(K_red, F_red)
 
@@ -115,3 +116,8 @@ def simulate_frame(E, n_elem, a, b, qx, w_frame, h_frame, l_frame, BC):
 
     return u, reactions
 
+
+if __name__=="__main__":
+    BC = np.array([[1, 2, 3], [0, 0, 0]])
+
+    simulate_frame(10, 3, 5,5,5,5,5,5,BC)

@@ -37,6 +37,11 @@ def momentOfInertia(Width):
     print(inertia)
     return inertia
 
+def trasform(theta):
+    return np.array([[np.cos(theta), -np.sin(theta), 0 ,0]
+                     [np.sin(theta), np.cos(theta), 0, 0],
+                     [0, 0, np.cos(theta), -np.sin(theta)],
+                     [0, 0, np.sin(theta), np.cos(theta)]])
 
 x = np.linspace(0, 0.25, 20)
 y = f(x)

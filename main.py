@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import cm
+import matplotlib
 from generate_bridge import generate_bridge
 
 # def StiffMat_beam(Area, I, E, length):  # define stiffness matrix
@@ -118,33 +120,73 @@ def simulate_frame(E, node_pos, elements, connections, BC, forces):
     u[[idx for idx in range((node_pos.shape[0]) * 2) if idx not in BC[0, :]]] = u_global
 
     reactions = K @ u - forces
-
     return u, reactions
 
 
+def stress_strain(connections, displacements, lengths, node_positions, E):
+    """
+    Can't be bothered to do it the proper way :)
+    """
+    strain = np.zeros(connections.shape[0])
+    for el_idx, node_idx in enumerate(connections):
+        n1, n2 = node_positions[node_idx[0],:], node_positions[node_idx[1],:]
+        dir_vec = n2 - n1
+        theta = np.arctan2(dir_vec[1], dir_vec[0])
+        trans_mat = get_transform_mat(theta)
 
+        dofs = [2*node_idx[0], 2*node_idx[0]+1, 2*node_idx[1], 2*node_idx[1]+1]
+        disp_local = trans_mat.T @ (np.array(displacements[dofs])).T
+        elongation = disp_local[2:] - disp_local[:2]
+        strain[el_idx] = (elongation[0]) / lengths[el_idx]
+
+    stress = strain * E
+    return stress, strain
+
+
+def plot_stress(stress, node_pos, connection_mat):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    colormap = matplotlib.colormaps["jet"]
+    norm = plt.Normalize(min(0, min(stress)), max(0, max(stress)))
+    scalar_map = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
+
+    ax.scatter(node_pos[:, 0], node_pos[:, 1], c='black')
+    for el_idx, node_idx in enumerate(connection_mat):
+        n1, n2 = node_pos[node_idx[0], :], node_pos[node_idx[1], :]
+        el_col = scalar_map.to_rgba(stress[el_idx])
+        ax.plot([n1[0], n2[0]], [n1[1], n2[1]], color=el_col)
+
+    fig.colorbar(scalar_map, label=r"$\sigma$ [MPa]", ax=ax)
+    ax.set_aspect('equal', adjustable='box')
+
+    plt.show()
 
 
 if __name__=="__main__":
     disp_vis_scale = 10
-    elasticity_modulus = 10e6
+    elasticity_modulus = 10e9
     plotting = True
-    node_pos, element_data, connection_matrix = generate_bridge(a1=2, N=10, tanWidth=4, radWidth=1, midpoint=[0, -0.05])
+    node_pos, element_data, connection_matrix = generate_bridge(a1=2, N=10, tanWidth=4, radWidth=1, midpoint=[0, -0.05], plotting=False)
 
     # FORMAT OF BCS IS: first row is the degrees of freedom, second row is the constrained displacements
     sym_constraint_idx_top = [(node_pos.shape[0] - 1) * 2]
     # Index 0: horizontal symmetry for the central node
     # indices 3,4,5 are a clamp at the rightmost bridge point
     # sym_constraint_idx_top is the symmetry constraint for the midpoint of the arc
-    BC_idx =  [0, 2, 3] + sym_constraint_idx_top
+    BC_idx = [0, 2, 3] + sym_constraint_idx_top
     BC_disp = [0, 0, 0, 0]
     BC = np.array([BC_idx, BC_disp])
 
-    mass = 1000  # kg
+    mass = 10e3  # kg
     force_vector = np.zeros(node_pos.shape[0]*2)
     force_vector[1] = - mass * 9.81 / 2
 
     displacements, reactions = simulate_frame(elasticity_modulus, node_pos, element_data, connection_matrix, BC, force_vector)
+
+    stress, strain = stress_strain(connection_matrix, displacements, lengths=element_data[:,1], node_positions=node_pos, E=elasticity_modulus)
+    stress_mpa = stress / 10**6
+
+    print(stress)
 
     if plotting:
         disp = displacements.reshape(-1, 2)
@@ -153,4 +195,6 @@ if __name__=="__main__":
         plt.scatter(new_pos_viz[:, 0], new_pos_viz[:, 1], c='b')
         plt.gca().set_aspect('equal', adjustable='box')
         plt.show()
-    # TODO GET STRESSES
+
+        plot_stress(stress_mpa, node_pos, connection_matrix)
+

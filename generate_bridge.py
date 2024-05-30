@@ -5,13 +5,12 @@ import matplotlib.pyplot as plt
 from scipy.optimize import bisect, fsolve
 
 
-
-def generate_bridge(a1, N, tanWidth, radWidth, midpoint, plotting=False):
+def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
     # a1 = 2
     # N = 10
     # tanWidth = 4
     # radWidth = 1
-    # midpoint = [0,-0.05]
+    midpoint = [0,mid_height]
     spaghetti_area = 1 #TODO adjust
     spaghetti_diameter = np.sqrt(4*spaghetti_area/np.pi)
 

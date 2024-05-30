@@ -101,6 +101,39 @@ def stress_strain(connections, displacements, lengths, node_positions, E):
     return stress, strain
 
 
+def buckling_load(E, I, L):
+    return np.pi**2 * E * I / L**2
+
+
+def failure_indices(stresses, Xt, Xc, Fcrit, areas):
+    """
+    params:
+        stresses:
+        Xt:
+        Xc:
+        Fcrit:
+        areas:
+
+    returns:
+        [N_elements, 3] np.ndarray - each row belongs to an element, the columns contain the failure indices in
+        [tension, compression, buckling] respectively. A failure index should range [0,1] where 1 indicates failure.
+    """
+    internal_forces = stresses * areas
+    comp_idx = np.where(stresses < 0)
+    tens_idx = np.where(stresses >= 0)
+
+    buckling_indices = -internal_forces / Fcrit
+    buckling_indices[tens_idx] = 0
+
+    compressive_indices = -stresses / Xc
+    compressive_indices[tens_idx] = 0
+
+    tensile_indices = stresses / Xt
+    tensile_indices[comp_idx] = 0
+
+    return np.vstack((tensile_indices, compressive_indices, buckling_indices)).T
+
+
 def plot_stress(stress, node_pos, connection_mat):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -120,16 +153,20 @@ def plot_stress(stress, node_pos, connection_mat):
     plt.show()
 
 
-def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
+def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
     disp_vis_scale = 10
     elasticity_modulus = 10e9
+    tensile_strength = 10e6
+    compressive_strength = 9e6
 
     node_pos, element_data, connection_matrix = generate_bridge(a1=a1,
                                                                 N=n,
                                                                 tanWidth=tanwidth,
                                                                 radWidth=radwidth,
-                                                                midpoint=midpoint,
+                                                                mid_height=mid_h,
                                                                 plotting=plotting)
+
+    lengths, areas, inertia = element_data[:,1], element_data[:,2], element_data[:,3]
 
     # FORMAT OF BCS IS: first row is the degrees of freedom, second row is the constrained displacements
     sym_constraint_idx_top = [(node_pos.shape[0] - 1) * 2]
@@ -140,22 +177,34 @@ def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
     BC_disp = [0, 0, 0, 0]
     BC = np.array([BC_idx, BC_disp])
 
-    # TODO: CALCULATE MASS OF BRIDGE
-
-    mass = 10e3  # kg
+    initial_mass = 1000  # kg
     force_vector = np.zeros(node_pos.shape[0] * 2)
-    force_vector[1] = - mass * 9.81 / 2
+    force_vector[1] = - initial_mass * 9.81 / 2  # /2 is to take into account symmetry
 
-    displacements, reactions = simulate_frame(elasticity_modulus, node_pos, element_data, connection_matrix, BC,
-                                              force_vector)
+    conv_tolerance = 1e-8
+    converged = False
+    while not converged:
 
-    stress, strain = stress_strain(connection_matrix, displacements, lengths=element_data[:, 1],
-                                   node_positions=node_pos, E=elasticity_modulus)
-    stress_mpa = stress / 10 ** 6
+        displacements, reactions = simulate_frame(elasticity_modulus, node_pos, element_data, connection_matrix, BC,
+                                                  force_vector)
 
-    # print(stress)
+        stress, strain = stress_strain(connection_matrix, displacements, lengths=element_data[:, 1],
+                                       node_positions=node_pos, E=elasticity_modulus)
+
+        fcrit = buckling_load(E=elasticity_modulus, I=inertia, L=lengths)
+
+        failure_check = failure_indices(stress, Xt=tensile_strength, Xc=compressive_strength, Fcrit=fcrit, areas=areas)
+        max_failure_index = np.max(failure_check)
+
+        if abs(max_failure_index - 1) < conv_tolerance:
+            converged = True
+        else:
+            force_vector /= max_failure_index
+
+    failure_mass = -force_vector[1] / 9.81
 
     if plotting:
+        stress_mpa = stress / 10 ** 6
         disp = displacements.reshape(-1, 2)
         new_pos_viz = node_pos + disp * disp_vis_scale
         plt.scatter(node_pos[:, 0], node_pos[:, 1], c='g')
@@ -164,5 +213,12 @@ def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
         plt.show()
 
         plot_stress(stress_mpa, node_pos, connection_matrix)
+
+    return failure_mass
+
+
+if __name__ == '__main__':
+    failure_mass = main(5, 10,2,3,-0.05, plotting=False)
+    print(failure_mass)
 
 

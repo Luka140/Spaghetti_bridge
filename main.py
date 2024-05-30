@@ -5,50 +5,8 @@ from matplotlib import cm
 import matplotlib
 from generate_bridge import generate_bridge
 
-# def StiffMat_beam(Area, I, E, length):  # define stiffness matrix
-#
-#     Ktot = np.zeros([6, 6])
-#
-#     # the truss part
-#     k = E * Area / leng
-#
-#     Ktot[0, 0] = k
-#     Ktot[3, 3] = k
-#     Ktot[0, 3] = -k
-#     Ktot[3, 0] = -k
-#
-#     # the beam part
-#     k = E * I / leng ** 3;
-#
-#     Kbeam = np.zeros([4, 4])
-#     Kbeam[0, 0] = 12 * k;
-#     Kbeam[0, 1] = 6 * leng * k;
-#     Kbeam[1, 0] = 6 * leng * k;
-#     Kbeam[1, 1] = 4 * leng ** 2 * k;
-#
-#     Kbeam[2, 0] = -12 * k;
-#     Kbeam[0, 2] = -12 * k;
-#     Kbeam[0, 3] = 6 * leng * k;
-#     Kbeam[3, 0] = 6 * leng * k;
-#
-#     Kbeam[1, 2] = -6 * leng * k;
-#     Kbeam[2, 1] = -6 * leng * k;
-#     Kbeam[2, 2] = 12 * k;
-#     Kbeam[3, 3] = 4 * leng ** 2 * k;
-#
-#     Kbeam[3, 1] = 2 * leng ** 2 * k;
-#     Kbeam[1, 3] = 2 * leng ** 2 * k;
-#     Kbeam[3, 2] = -6 * leng * k;
-#     Kbeam[2, 3] = -6 * leng * k;
-#
-#     Ktot[1:3, 1:3] = Kbeam[0:2, 0:2];
-#     Ktot[4:6, 4:6] = Kbeam[2:4, 2:4];
-#     Ktot[1:3, 4:6] = Kbeam[0:2, 2:4];
-#     Ktot[4:6, 1:3] = Kbeam[2:4, 0:2];
-#
-#     return Ktot
 
-def StiffMat(Area, E, length):
+def get_elemnt_k(Area, E, length):
     K = np.zeros((4,4))
     keq =  E * Area / length
     K[0,0], K[2,2] = keq, keq
@@ -57,7 +15,7 @@ def StiffMat(Area, E, length):
     return K
 
 
-def assemble_K(E, areas, lengths, connections, node_positions):
+def assemble_k(E, areas, lengths, connections, node_positions):
     n_nodes = node_positions.shape[0]
     K_global = np.zeros((n_nodes * 2, n_nodes * 2))
     for el_idx in range(len(connections)):
@@ -66,7 +24,7 @@ def assemble_K(E, areas, lengths, connections, node_positions):
         dir_vec = n2 - n1
         theta = np.arctan2(dir_vec[1], dir_vec[0])
 
-        K_local = StiffMat(areas[el_idx], E, lengths[el_idx])
+        K_local = get_elemnt_k(areas[el_idx], E, lengths[el_idx])
         T_mat = get_transform_mat(theta)
         K_transformed = T_mat @ K_local @ T_mat.T
         indices = (2 * n1idx, 2 * n1idx + 1,
@@ -110,7 +68,7 @@ def get_transform_mat(theta):
 
 
 def simulate_frame(E, node_pos, elements, connections, BC, forces):
-    K = assemble_K(E, areas=elements[:,2], lengths=elements[:,1], connections=connections, node_positions=node_pos)
+    K = assemble_k(E, areas=elements[:, 2], lengths=elements[:, 1], connections=connections, node_positions=node_pos)
     K_red, F_red = reduce_matrices(K, forces, BC)
     u_global = np.linalg.solve(K_red, F_red)
 
@@ -162,31 +120,40 @@ def plot_stress(stress, node_pos, connection_mat):
     plt.show()
 
 
-if __name__=="__main__":
+def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
     disp_vis_scale = 10
     elasticity_modulus = 10e9
-    plotting = True
-    node_pos, element_data, connection_matrix = generate_bridge(a1=2, N=10, tanWidth=4, radWidth=1, midpoint=[0, -0.05], plotting=False)
+
+    node_pos, element_data, connection_matrix = generate_bridge(a1=a1,
+                                                                N=n,
+                                                                tanWidth=tanwidth,
+                                                                radWidth=radwidth,
+                                                                midpoint=midpoint,
+                                                                plotting=plotting)
 
     # FORMAT OF BCS IS: first row is the degrees of freedom, second row is the constrained displacements
     sym_constraint_idx_top = [(node_pos.shape[0] - 1) * 2]
     # Index 0: horizontal symmetry for the central node
-    # indices 3,4,5 are a clamp at the rightmost bridge point
     # sym_constraint_idx_top is the symmetry constraint for the midpoint of the arc
+    # 2 and 3 are the dofs for the fully constrained node on the side
     BC_idx = [0, 2, 3] + sym_constraint_idx_top
     BC_disp = [0, 0, 0, 0]
     BC = np.array([BC_idx, BC_disp])
 
+    # TODO: CALCULATE MASS OF BRIDGE
+
     mass = 10e3  # kg
-    force_vector = np.zeros(node_pos.shape[0]*2)
+    force_vector = np.zeros(node_pos.shape[0] * 2)
     force_vector[1] = - mass * 9.81 / 2
 
-    displacements, reactions = simulate_frame(elasticity_modulus, node_pos, element_data, connection_matrix, BC, force_vector)
+    displacements, reactions = simulate_frame(elasticity_modulus, node_pos, element_data, connection_matrix, BC,
+                                              force_vector)
 
-    stress, strain = stress_strain(connection_matrix, displacements, lengths=element_data[:,1], node_positions=node_pos, E=elasticity_modulus)
-    stress_mpa = stress / 10**6
+    stress, strain = stress_strain(connection_matrix, displacements, lengths=element_data[:, 1],
+                                   node_positions=node_pos, E=elasticity_modulus)
+    stress_mpa = stress / 10 ** 6
 
-    print(stress)
+    # print(stress)
 
     if plotting:
         disp = displacements.reshape(-1, 2)
@@ -197,4 +164,5 @@ if __name__=="__main__":
         plt.show()
 
         plot_stress(stress_mpa, node_pos, connection_matrix)
+
 

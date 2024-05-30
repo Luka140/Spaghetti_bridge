@@ -5,6 +5,8 @@ from matplotlib import cm
 import matplotlib
 from generate_bridge import generate_bridge
 
+from utilits import computeMass
+
 
 def get_elemnt_k(Area, E, length):
     K = np.zeros((4,4))
@@ -104,8 +106,9 @@ def stress_strain(connections, displacements, lengths, node_positions, E):
 def plot_stress(stress, node_pos, connection_mat):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    colormap = matplotlib.colormaps["jet"]
-    norm = plt.Normalize(min(0, min(stress)), max(0, max(stress)))
+    colormap = matplotlib.colormaps["coolwarm"]
+    max_magnitude = max(abs(min(stress)), max(stress))
+    norm = plt.Normalize(-max_magnitude, max_magnitude)
     scalar_map = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
 
     ax.scatter(node_pos[:, 0], node_pos[:, 1], c='black')
@@ -141,7 +144,7 @@ def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
     BC = np.array([BC_idx, BC_disp])
 
     # TODO: CALCULATE MASS OF BRIDGE
-
+    print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
     mass = 10e3  # kg
     force_vector = np.zeros(node_pos.shape[0] * 2)
     force_vector[1] = - mass * 9.81 / 2
@@ -166,3 +169,4 @@ def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
         plot_stress(stress_mpa, node_pos, connection_matrix)
 
 
+main(2, 12, 12, 5, [0,-0.1], plotting=True)

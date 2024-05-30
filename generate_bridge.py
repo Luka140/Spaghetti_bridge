@@ -12,7 +12,7 @@ def generate_bridge(a1, N, tanWidth, radWidth, midpoint, plotting=False):
     # tanWidth = 4
     # radWidth = 1
     # midpoint = [0,-0.05]
-    spaghetti_area = 1 #TODO adjust
+    spaghetti_area = np.pi*3e-3**2/4
     spaghetti_diameter = np.sqrt(4*spaghetti_area/np.pi)
 
     span = 0.25

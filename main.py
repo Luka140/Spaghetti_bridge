@@ -170,6 +170,11 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
                                                                 plotting=plotting)
 
     lengths, areas, inertia = element_data[:,1], element_data[:,2], element_data[:,3]
+    #print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
+    # This is the mass of the bridge itself
+    mass_bridge = computeMass(element_data, 384.63)  # kg
+
+
 
     # FORMAT OF BCS IS: first row is the degrees of freedom, second row is the constrained displacements
     sym_constraint_idx_top = [(node_pos.shape[0] - 1) * 2]
@@ -179,10 +184,6 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
     BC_idx = [0, 2, 3] + sym_constraint_idx_top
     BC_disp = [0, 0, 0, 0]
     BC = np.array([BC_idx, BC_disp])
-
-    #print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
-    # This is the mass of the bridge itself
-    mass_bridge = computeMass(element_data, 384.63)  # kg
 
     # This is the carried payload mass
     initial_mass = 1000
@@ -222,11 +223,12 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
 
         plot_stress(stress_mpa, node_pos, connection_matrix)
 
-    return failure_mass
+    return failure_mass, np.max(lengths), mass_bridge
 
 
 if __name__ == '__main__':
-    failure_mass = main(5, 10,2,3,-0.05, plotting=False)
+    #main(a1, n, tanwidth, radwidth, mid_h, plotting=False)
+    failure_mass,_,_ = main(0.5, 10,12,3, 0.05, plotting=True)
     print(failure_mass)
 
 

@@ -144,8 +144,8 @@ def main(a1, n, tanwidth, radwidth, midpoint, plotting=False):
     BC = np.array([BC_idx, BC_disp])
 
     # TODO: CALCULATE MASS OF BRIDGE
-    print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
-    mass = 10e3  # kg
+    #print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
+    mass = computeMass(element_data, 384.63)  # kg
     force_vector = np.zeros(node_pos.shape[0] * 2)
     force_vector[1] = - mass * 9.81 / 2
 

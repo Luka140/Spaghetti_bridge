@@ -222,7 +222,7 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
 
         plot_stress(stress_mpa, node_pos, connection_matrix)
 
-    return failure_mass
+    return failure_mass, mass_bridge, np.min(lengths), np.max(lengths)
 
 
 if __name__ == '__main__':

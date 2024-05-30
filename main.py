@@ -5,6 +5,8 @@ from matplotlib import cm
 import matplotlib
 from generate_bridge import generate_bridge
 
+from utilits import computeMass
+
 
 def get_elemnt_k(Area, E, length):
     K = np.zeros((4,4))
@@ -137,8 +139,9 @@ def failure_indices(stresses, Xt, Xc, Fcrit, areas):
 def plot_stress(stress, node_pos, connection_mat):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    colormap = matplotlib.colormaps["jet"]
-    norm = plt.Normalize(min(0, min(stress)), max(0, max(stress)))
+    colormap = matplotlib.colormaps["coolwarm"]
+    max_magnitude = max(abs(min(stress)), max(stress))
+    norm = plt.Normalize(-max_magnitude, max_magnitude)
     scalar_map = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
 
     ax.scatter(node_pos[:, 0], node_pos[:, 1], c='black')
@@ -177,7 +180,12 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
     BC_disp = [0, 0, 0, 0]
     BC = np.array([BC_idx, BC_disp])
 
-    initial_mass = 1000  # kg
+    #print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
+    # This is the mass of the bridge itself
+    mass_bridge = computeMass(element_data, 384.63)  # kg
+
+    # This is the carried payload mass
+    initial_mass = 1000
     force_vector = np.zeros(node_pos.shape[0] * 2)
     force_vector[1] = - initial_mass * 9.81 / 2  # /2 is to take into account symmetry
 

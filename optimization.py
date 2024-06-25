@@ -72,11 +72,9 @@ chainy = []
 result = []
 steespest_ascent(params=np.array([2, -0.07]), lr=np.array([1e-2, 1e-3]), tol=1e-6, x=chainx, y=chainy, res=result)
 
-print(len(chainx), len(chainy), len(result))
 N = 20
 M = 20
 f = np.zeros((N, M))
-
 A = np.linspace(1,4, N)
 MID = np.linspace(-0.08, -0.01, M)
 it = 0 
@@ -93,7 +91,9 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 ax.plot(chainx, chainy, result)
+
 levels = [400,500,600,700,725, 750, 760, 775,800,825]
+
 ax.contour(X, Y, f, levels=levels)
 ax.plot(chainx[-1], chainy[-1], result[-1], marker='o', color='r')
 ax.set_xlabel('a')

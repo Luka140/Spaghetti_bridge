@@ -228,7 +228,8 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
 
 if __name__ == '__main__':
     #main(a1, n, tanwidth, radwidth, mid_h, plotting=False)
-    failure_mass,_,_ = main(0.5, 10,12,3, 0.05, plotting=True)
+    failure_mass,_,mass = main(5.30087603, 30,20,4, -0.05402201, plotting=True)
     print(failure_mass)
+    print(mass)
 
 

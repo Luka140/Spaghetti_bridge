@@ -14,7 +14,7 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
     spaghetti_area = np.pi*3e-3**2/4
     spaghetti_diameter = np.sqrt(4*spaghetti_area/np.pi)
 
-    span = 0.25
+    span = 0.35/2
     b1 = a1*span**2
     if b1 < mid_height:
         print('Your bridge is upside down')

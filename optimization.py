@@ -1,6 +1,7 @@
 import numpy as np 
 import copy
 from main import main
+from logger import logger
 
 def gLmax(L, Lmax, p=100):
     return 100 * np.exp(L - Lmax)**p
@@ -52,8 +53,10 @@ def optimize(analysis_func, objective_func, params, constraints, lr, tol):
     x = copy.deepcopy(params)
     objective_prev = 0
 
+    convergence_steps = 0
     converged = False
     while not converged:
+        convergence_steps += 1
         grad, objective = gradient(f_analysis=analysis_func,
                                    f_obj=objective_func,
                                    params=x,
@@ -67,7 +70,7 @@ def optimize(analysis_func, objective_func, params, constraints, lr, tol):
         x_prev = x
         # print(x, objective)
 
-    return x
+    return x, convergence_steps, objective
 
 
 def simplified_analysis(params):
@@ -87,4 +90,20 @@ if __name__ == '__main__':
 
     # Min length, max length, max mass
     constraints = [0.03, 0.25, 0.3]
-    optimal = optimize(simplified_analysis, objective, initial_params, constraints, lr, tol)
+    optimal, steps, objective_val = optimize(simplified_analysis, objective, initial_params, constraints, lr, tol)
+
+    carried_mass, bridge_mass, min_length, max_length = simplified_analysis(optimal)
+
+    logger("log_files", "optimization",
+           initial_parameters=str(initial_params),
+           constraints=str(constraints),
+           learning_rate=lr,
+           tolerance=tol,
+           steps=steps,
+           optimal_solution=optimal,
+           objective_value=objective_val,
+           carried_mass=carried_mass,
+           bridge_mass=bridge_mass,
+           minimum_spaghetti_length=min_length,
+           maximum_spaghetti_length=max_length
+           )

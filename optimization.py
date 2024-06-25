@@ -3,11 +3,14 @@ import copy
 from main import main
 from logger import logger
 
+
 def gLmax(L, Lmax, p=100):
     return 100 * np.exp(L - Lmax)**p
 
+
 def gLmin(L, Lmin, p=100):
     return 100 / np.exp(L - Lmin)**p
+
 
 def gMmax(M, Mmax, p=100):
     return 100 * np.exp(M - Mmax)**p
@@ -21,7 +24,7 @@ def objective(analysis_function, params, max_constraints):
     failure_mass, mass_bridge, min_length, max_length = analysis_function(params)
     c_min_length, c_max_length, c_max_mass = max_constraints
     penalties = [gMmax(mass_bridge, c_max_mass), gLmin(min_length, c_min_length), gMmax(max_length, c_max_length)]
-    print(f"Carrying {failure_mass:2f} kg - bridge mass: {mass_bridge:2f} kg - length range {min_length:2f} {max_length:2f}")
+    # print(f"Carrying {failure_mass:2f} kg - bridge mass: {mass_bridge:2f} kg - length range {min_length:2f} {max_length:2f}")
     obj = failure_mass
     obj -= sum(penalties)
     return obj
@@ -39,19 +42,12 @@ def gradient(f_analysis, f_obj, params, constraints):
     return grad, centre_eval
 
 
-# def steespest_descent(F, params, lr, tol):
-#     grad = gradient(F, params)
-#     while np.linalg.norm(grad) > tol:
-#         params -= lr * grad
-#         grad = gradient(F, params)
-#     return params
-
-# print(steespest_descent(F, [1, 0.25], 1e-3, 1e-6))
-
 def optimize(analysis_func, objective_func, params, constraints, lr, tol):
     x_prev = copy.deepcopy(params)
     x = copy.deepcopy(params)
+
     objective_prev = 0
+    ri_prev = 0
 
     convergence_steps = 0
     converged = False
@@ -61,14 +57,23 @@ def optimize(analysis_func, objective_func, params, constraints, lr, tol):
                                    f_obj=objective_func,
                                    params=x,
                                    constraints=constraints)
-        # print(grad, x_prev)
-        x = x_prev + lr * grad / np.linalg.norm(grad)
-        # print(x, objective)
-        if abs(objective - objective_prev) <= tol:
+
+        # grad /= np.linalg.norm(grad)
+
+        rho = 0.6
+        ri = rho * ri_prev + (1 - rho) * np.sum(grad * grad)
+        x = x_prev + lr * grad / (ri**0.5 + 1.e-6)
+
+        if abs((objective - objective_prev) / objective) <= tol:
             converged = True
 
         x_prev = x
-        # print(x, objective)
+        objective_prev = objective
+        # grad_prev = grad
+        ri_prev = ri
+
+        if convergence_steps % 50 == 0:
+            print(f"Iteration {convergence_steps} - objective value {objective} - parameter values: {x}")
 
     return x, convergence_steps, objective
 
@@ -85,8 +90,8 @@ def simplified_analysis(params):
 
 if __name__ == '__main__':
     initial_params = np.array([1.8, 0])
-    lr = 1e-2
-    tol = 1e-6
+    lr = np.ones(initial_params.shape) * 1e-2
+    tol = 1e-5
 
     # Min length, max length, max mass
     constraints = [0.03, 0.25, 0.3]

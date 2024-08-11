@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 from generate_bridge import generate_bridge
 import scipy.optimize as opt
 
-# TODO FEATURE SCALING
-
-
 def gLmax(L, Lmax, p=100, p2=0.00001):
     return p * np.exp((L - Lmax)/p2)
 
@@ -209,7 +206,7 @@ def optimize_cg(analysis_func, objective_func, params, constraints, lr, tol, h):
             if convergence_steps < 2:
                 search_dir = search_dir_prev
             else:
-                # TODO dunno if this should be a subtraction or summation
+                
                 # search_dir = grad - search_dir_prev * (np.linalg.norm(grad) / np.linalg.norm(grad_prev))**2
                 search_dir = grad - search_dir_prev * (np.dot(grad,grad) / np.dot(grad_prev,grad_prev))
                 # search_dir = grad - search_dir_prev * (

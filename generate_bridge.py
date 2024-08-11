@@ -58,18 +58,21 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
         if np.abs(alpha - np.pi/2) < 1e-6:
             nodes[i, 0] = 0
             nodes[i, 1] = f(0)
-            plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
+            if plotting:
+                plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
             continue
         y1 = lambda x: np.tan(alpha) * x + midpoint[1]
         nodes[i, 0] = fsolve(lambda x: y1(x) - f(x), 3)
         nodes[i, 1] = f(nodes[i, 0])
-        plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
+        if plotting:
+            plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
 
     for i in range(len(nodes)-1):
-        plt.text(nodes[i,0]+ 1e-4, nodes[i,1]+ 1e-4, str(i+1))
-        plt.plot([nodes[i,0], nodes[i+1,0]], [nodes[i,1], nodes[i+1,1]], color='black')
-        if i == len(nodes)-2:
-            plt.text(nodes[i+1,0]+ 1e-4, nodes[i+1,1]+ 1e-4, str(i+2))
+        if plotting:
+            plt.text(nodes[i,0]+ 1e-4, nodes[i,1]+ 1e-4, str(i+1))
+            plt.plot([nodes[i,0], nodes[i+1,0]], [nodes[i,1], nodes[i+1,1]], color='black')
+            if i == len(nodes)-2:
+                plt.text(nodes[i+1,0]+ 1e-4, nodes[i+1,1]+ 1e-4, str(i+2))
 
     # Connectivity matrix
     radial = np.vstack((np.zeros(N, dtype=np.integer), np.arange(1, N+1, dtype=np.integer))).T

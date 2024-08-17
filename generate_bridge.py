@@ -73,7 +73,6 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
             plt.plot([nodes[i,0], nodes[i+1,0]], [nodes[i,1], nodes[i+1,1]], color='black')
             if i == len(nodes)-2:
                 plt.text(nodes[i+1,0]+ 1e-4, nodes[i+1,1]+ 1e-4, str(i+2))
-
     # Connectivity matrix
     radial = np.vstack((np.zeros(N, dtype=np.integer), np.arange(1, N+1, dtype=np.integer))).T
     tangential = np.vstack((np.arange(1, N,dtype=np.integer), np.arange(2, N+1, dtype=np.integer))).T
@@ -103,6 +102,10 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
         plt.text(midpoint[0], midpoint[1]+ 1e-4, str(0))
         plt.scatter(nodes[:, 0], nodes[:, 1], c='g')
         plt.gca().set_aspect('equal', adjustable='box')
+        plt.xlabel('x - width [m]')
+        plt.ylabel('y - height [m]')
+        plt.tight_layout(pad=0.5)
+
         plt.show()
 
     return nodes, elements, connection_matrix

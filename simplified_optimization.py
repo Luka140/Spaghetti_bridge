@@ -23,8 +23,13 @@ def gMmax(M, Mmax, p=100, p2=0.00001):
 #
 
 def objective(analysis_function, params, max_constraints, **kwargs):
-    p1 = 10
-    p2 = 0.01
+    p1 = kwargs.get('p1', None)
+    if p1 is None:
+        p1 = 10
+    p2 = kwargs.get('p2', None)
+    if p2 is None:
+        p2 = 0.01
+
     failure_mass, mass_bridge, min_length, max_length = analysis_function(*params, **kwargs)
     c_min_length, c_max_length, c_max_mass = max_constraints
     penalties = [gMmax(mass_bridge, c_max_mass, p=p1, p2=p2), gLmin(min_length, c_min_length, p=p1, p3=1/p2), gMmax(max_length, c_max_length, p=p1, p2=p2)]
@@ -149,7 +154,7 @@ def linesearch(starting_point, direction, objective_func, analysis_func, constra
 
 
 def golden_section(starting_point, direction, delta_lower, delta_upper, objective_function, analysis_function, constraints, tolerance):
-    phi = (5**0.5 -1)/2
+    phi = (5**0.5 - 1)/2
 
     probe1_delta = delta_lower + (delta_upper - delta_lower) * (1-phi)
     xprobe1 = starting_point + direction * probe1_delta
@@ -206,7 +211,7 @@ def optimize_cg(analysis_func, objective_func, params, constraints, lr, tol, h):
             if convergence_steps < 2:
                 search_dir = search_dir_prev
             else:
-                
+
                 # search_dir = grad - search_dir_prev * (np.linalg.norm(grad) / np.linalg.norm(grad_prev))**2
                 search_dir = grad - search_dir_prev * (np.dot(grad,grad) / np.dot(grad_prev,grad_prev))
                 # search_dir = grad - search_dir_prev * (
@@ -248,11 +253,14 @@ def simplified_analysis(*params, **kwargs):
 
 if __name__ == '__main__':
     scaling_parameter = 5
-    # initial_params = np.array([1.8 / scaling_parameter, -0.02])
-    initial_params = np.array([4 / scaling_parameter, -0.175])
+    initial_params = np.array([1.8 / scaling_parameter, -0.02])
+    # initial_params = np.array([4 / scaling_parameter, -0.175])
     lr = 5e-2
     tol = 1e-5
     h = 1e-8
+
+    p1 = 5
+    p2 = 0.01
 
     # Min length, max length, max mass
     constraints = [0.03, 0.3, 0.5]
@@ -267,11 +275,14 @@ if __name__ == '__main__':
 
     plot_color_contour(mesh_a, mesh_h, mesh_obj)
 
-    optimal, steps, objective_val, x_history = optimize(simplified_analysis, objective, initial_params, constraints, lr, tol, h, scaling_parameter=scaling_parameter)
+    optimal, steps, objective_val, x_history = optimize(simplified_analysis, objective, initial_params, constraints, lr, tol, h,
+                                                        scaling_parameter=scaling_parameter,
+                                                        p1=p1,
+                                                        p2=p2)
     carried_mass, bridge_mass, min_length, max_length = simplified_analysis(*optimal, scaling_parameter=scaling_parameter)
 
     logger("log_files", "optimization",
-           initial_parameters=str(initial_params),
+           initial_parameters=str(initial_params * np.array([scaling_parameter, 1])),
            constraints=str(constraints),
            learning_rate=lr,
            tolerance=tol,
@@ -281,7 +292,9 @@ if __name__ == '__main__':
            carried_mass=carried_mass,
            bridge_mass=bridge_mass,
            minimum_spaghetti_length=min_length,
-           maximum_spaghetti_length=max_length
+           maximum_spaghetti_length=max_length,
+           p1=p1,
+           p2=p2
            )
 
     plt.plot(x_history[:,0]*scaling_parameter, x_history[:,1], color='red', alpha=0.5, linestyle='dashed')

@@ -144,7 +144,7 @@ if __name__ == '__main__':
                                                         p2=p2)
     carried_mass, bridge_mass, min_length, max_length = simplified_analysis(*optimal, scaling_parameter=scaling_parameter)
 
-    logger("log_files", "optimization",
+    logger("log_files_simplified", "optimization",
            initial_parameters=str(initial_params * np.array([scaling_parameter, 1])),
            constraints=str(constraints),
            learning_rate=lr,

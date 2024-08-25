@@ -168,7 +168,7 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
                                                                 radWidth=radwidth,
                                                                 mid_height=mid_h,
                                                                 plotting=plotting)
-
+    nodeconstraint = node_pos[0,1] - node_pos[-1,1] 
     lengths, areas, inertia = element_data[:,1], element_data[:,2], element_data[:,3]
     #print('Total mass is ', computeMass(element_data, 384.63)*1000, 'gram')
     # This is the mass of the bridge itself
@@ -223,12 +223,12 @@ def main(a1, n, tanwidth, radwidth, mid_h, plotting=False):
 
         plot_stress(stress_mpa, node_pos, connection_matrix)
 
-    return failure_mass, np.max(lengths), mass_bridge
+    return failure_mass, np.max(lengths), mass_bridge, np.min(lengths)
 
 
 if __name__ == '__main__':
     #main(a1, n, tanwidth, radwidth, mid_h, plotting=False)
-    failure_mass,_,mass = main(5.30087603, 30,20,4, -0.05402201, plotting=True)
+    failure_mass,_,mass,_ = main(5.30087603, 30,20,4, -0.05402201, plotting=False)
     print(failure_mass)
     print(mass)
 

@@ -6,18 +6,14 @@ from scipy.optimize import bisect, fsolve
 
 
 def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
-    # a1 = 2
-    # N = 10
-    # tanWidth = 4
-    # radWidth = 1
     midpoint = [0,mid_height]
     spaghetti_area = np.pi*3e-3**2/4
     spaghetti_diameter = np.sqrt(4*spaghetti_area/np.pi)
 
-    span = 0.35/2
+    span = 0.5/2
     b1 = a1*span**2
-    if b1 < mid_height:
-        print('Your bridge is upside down')
+    # if b1 < mid_height:
+    #     print('Your bridge is upside down')
 
     # define parabola
 
@@ -60,18 +56,22 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
         if np.abs(alpha - np.pi/2) < 1e-6:
             nodes[i, 0] = 0
             nodes[i, 1] = f(0)
-            plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
+            if plotting:
+                plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
             continue
         y1 = lambda x: np.tan(alpha) * x + midpoint[1]
         nodes[i, 0] = fsolve(lambda x: y1(x) - f(x), 3)
         nodes[i, 1] = f(nodes[i, 0])
-        plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
+        if plotting:
+            plt.plot([midpoint[0], nodes[i,0]], [midpoint[1], nodes[i,1]], 'r')
 
     for i in range(len(nodes)-1):
-        plt.text(nodes[i,0]+ 1e-4, nodes[i,1]+ 1e-4, str(i+1))
-        plt.plot([nodes[i,0], nodes[i+1,0]], [nodes[i,1], nodes[i+1,1]], color='black')
+        if plotting:
+            plt.text(nodes[i,0]+ 1e-4, nodes[i,1]+ 1e-4, str(i+1))
+            plt.plot([nodes[i,0], nodes[i+1,0]], [nodes[i,1], nodes[i+1,1]], color='black')
         if i == len(nodes)-2:
-            plt.text(nodes[i+1,0]+ 1e-4, nodes[i+1,1]+ 1e-4, str(i+2))
+            if plotting:
+                plt.text(nodes[i+1,0]+ 1e-4, nodes[i+1,1]+ 1e-4, str(i+2))
 
     # Connectivity matrix
     radial = np.vstack((np.zeros(N, dtype=np.integer), np.arange(1, N+1, dtype=np.integer))).T
@@ -97,7 +97,6 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
     nodes = np.vstack((midpoint, nodes))
     # print(nodes)
     # print(elements)
-
     if plotting:
         plt.text(midpoint[0], midpoint[1]+ 1e-4, str(0))
         plt.scatter(nodes[:, 0], nodes[:, 1], c='g')
@@ -108,3 +107,36 @@ def generate_bridge(a1, N, tanWidth, radWidth, mid_height, plotting=False):
 
 
 
+def feasibility_region():
+    a1 = 1
+    n  = 4 
+    N = 50
+    tanWidth = 12
+    radWidth = 4
+    mid_height = 0.15
+
+    #feasible range for 
+    a1 = np.linspace(-2, 7.44, N)
+    mid_height = np.linspace(-0.2, 0.2, N)
+    feasibility_map = np.zeros((len(a1), len(mid_height)))
+
+    for i in range(len(a1)):
+        for j in range(len(mid_height)):
+            nodes, elements, connection_matrix = generate_bridge(a1[i], n, tanWidth, radWidth, mid_height[j], plotting=False)
+            lengths = elements[:,1]
+            if np.max(lengths) > 0.3:
+                feasibility_map[j,i] = 1
+            if np.sum(elements[:,2]*elements[:,1]) > 0.5*0.9:
+                feasibility_map[j, i] = 2
+            if np.min(lengths) < 0.03:
+                feasibility_map[j,i] = 3
+            if nodes[0,1] > nodes[-1, 1]:
+                feasibility_map[j,i] = 4
+    mesh = np.meshgrid(a1, mid_height)
+    plt.pcolormesh(mesh[0], mesh[1], feasibility_map, cmap='jet')
+    plt.colorbar()
+    plt.xlabel('slope')
+    plt.ylabel('mid point')
+    plt.show()
+
+#feasibility_region()

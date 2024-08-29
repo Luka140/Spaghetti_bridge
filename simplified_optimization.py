@@ -5,17 +5,17 @@ from logger import logger
 from plotting import plot_color_contour
 import matplotlib.pyplot as plt
 from generate_bridge import generate_bridge
-import scipy.optimize as opt
 
-def gLmax(L, Lmax, p=100., p2=0.00001):
-    return p * np.exp((L - Lmax)/p2)
-
-def gLmin(L, Lmin, p=100., p3=100.):
-    return p / np.exp(p3*(L - Lmin))
+def gLmax(L, Lmax, p, p2):
+    return p * np.exp((L - Lmax)/(p2 * Lmax))
 
 
-def gMmax(M, Mmax, p=100., p2=0.00001):
-    return p * np.exp((M - Mmax)/p2)
+def gLmin(L, Lmin, p, p2):
+    return p / np.exp((L - Lmin)/(p2 * Lmin))
+
+
+def gMmax(M, Mmax, p, p2):
+    return p * np.exp((M - Mmax)/(p2 * Mmax))
 
 
 def objective(analysis_function, params, max_constraints, **kwargs):
@@ -28,7 +28,7 @@ def objective(analysis_function, params, max_constraints, **kwargs):
 
     failure_mass, mass_bridge, min_length, max_length = analysis_function(*params, **kwargs)
     c_min_length, c_max_length, c_max_mass = max_constraints
-    penalties = [gMmax(mass_bridge, c_max_mass, p=p1, p2=p2), gLmin(min_length, c_min_length, p=p1, p3=1/p2), gMmax(max_length, c_max_length, p=p1, p2=p2)]
+    penalties = [gMmax(mass_bridge, c_max_mass, p=p1, p2=p2), gLmin(min_length, c_min_length, p=p1, p2=p2), gMmax(max_length, c_max_length, p=p1, p2=p2)]
 
     obj = failure_mass
     obj -= sum(penalties)
@@ -105,25 +105,25 @@ def simplified_analysis(*params, **kwargs):
         scaling_parameter = 1
 
     pars = [params[0]*scaling_parameter,        # a1
-            10,                                 # N
-            12,                                 # tanwidth
-            4,                                  # radwidth
+            3,                                 # N
+            17,                                 # tanwidth
+            11,                                  # radwidth
             params[1]]                          # midheight
 
     return main(*pars)
 
 
 if __name__ == '__main__':
-    scaling_parameter = 5
+    scaling_parameter = 6.5
     initial_params = np.array([1.8 / scaling_parameter, -0.02])
     # initial_params = np.array([4 / scaling_parameter, -0.175])
     lr = 5e-2
-    tol = 1e-5
+    tol = 1e-10
     h = 1e-8
 
     # Penalty function parameters
-    p1 = 5
-    p2 = 0.01
+    p1 = 15
+    p2 = 0.0055
 
     # Min length, max length, max mass
     constraints = [0.03, 0.3, 0.5]
@@ -165,4 +165,4 @@ if __name__ == '__main__':
     plt.plot(x_history[-1, 0] * scaling_parameter, x_history[-1, 1], color='black', marker='x')
     plt.show()
 
-    generate_bridge(a1=x_history[-1,0]*scaling_parameter, N=10,tanWidth=12, radWidth=4, mid_height=x_history[-1,1], plotting=True)
+    # generate_bridge(a1=x_history[-1,0]*scaling_parameter, N=10,tanWidth=12, radWidth=4, mid_height=x_history[-1,1], plotting=True)

@@ -1,5 +1,5 @@
 # Factorial optimization
-....
+Code for the factorial optimization is on the main branch.
 
 # Full nested optimization
 For the full nested optimisation code, see `full_optimization_nested.py` on the [full_optimisation](https://github.com/Luka140/Spaghetti_bridge/blob/full_optimisation/full_optimization_nested.py) branch.

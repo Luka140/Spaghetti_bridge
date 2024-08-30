@@ -1,0 +1,13 @@
+initial_parameters - [ 1.8  -0.02]
+constraints - [0.03, 0.3, 0.5]
+learning_rate - 0.05
+tolerance - 1e-05
+steps - 39
+optimal_solution - [3.85331534 0.18516929]
+objective_value - 1584.2800602848472
+carried_mass - 1648.3561612578678
+bridge_mass - 0.5227165882933246
+minimum_spaghetti_length - 0.05566291445666774
+maximum_spaghetti_length - 0.3111071639476513
+p1 - 5
+p2 - 0.01
